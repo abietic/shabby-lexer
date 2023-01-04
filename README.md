@@ -1,0 +1,1 @@
+A simple rip-off on golang's lexer
