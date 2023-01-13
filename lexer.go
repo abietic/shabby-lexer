@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// 以字节数组的形式读取输入文件,通过调用Scan方法,解析成token序列
 // Package scanner implements a scanner for Go source text.
 // It takes a []byte as source which can then be tokenized
 // through repeated calls to the Scan method.
@@ -18,16 +19,22 @@ import (
 	"github.com/abietic/shabby-lexer/token"
 )
 
+// 为Lexer.init初始化时添加一个错误处理函数
+// 如果出现了一个语法错误,并且有错误处理函数时
+// 调用错误处理函数给出错误信息和出错token在文本中的位置
 // An ErrorHandler may be provided to Scanner.Init. If a syntax error is
 // encountered and a handler was installed, the handler is called with a
 // position and an error message. The position points to the beginning of
 // the offending token.
 type ErrorHandler func(pos token.Position, msg string)
 
-// A Scanner holds the scanner's internal state while processing
+// 保存Lexer在处理源文件时的中间状态的数据结构
+// 可能是某个其它数据结构的一部分
+// 但是在使用前一定要先用Lexer.Init初始化
+// A Lexer holds the scanner's internal state while processing
 // a given text. It can be allocated as part of another data
 // structure but must be initialized via Init before use.
-type Scanner struct {
+type Lexer struct {
 	// immutable state
 	file *token.File  // source file handle
 	dir  string       // directory portion of file.Name()
@@ -56,7 +63,7 @@ const (
 //
 // For optimization, there is some overlap between this method and
 // s.scanIdentifier.
-func (s *Scanner) next() {
+func (s *Lexer) next() {
 	if s.rdOffset < len(s.src) {
 		s.offset = s.rdOffset
 		if s.ch == '\n' {
@@ -90,7 +97,7 @@ func (s *Scanner) next() {
 
 // peek returns the byte following the most recently read character without
 // advancing the scanner. If the scanner is at EOF, peek returns 0.
-func (s *Scanner) peek() byte {
+func (s *Lexer) peek() byte {
 	if s.rdOffset < len(s.src) {
 		return s.src[s.rdOffset]
 	}
@@ -120,7 +127,7 @@ const (
 //
 // Note that Init may call err if there is an error in the first character
 // of the file.
-func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode) {
+func (s *Lexer) Init(file *token.File, src []byte, err ErrorHandler, mode Mode) {
 	// Explicitly initialize all fields since a scanner may be reused.
 	if file.Size() != len(src) {
 		panic(fmt.Sprintf("file size (%d) does not match src len (%d)", file.Size(), len(src)))
@@ -144,18 +151,18 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode
 	}
 }
 
-func (s *Scanner) error(offs int, msg string) {
+func (s *Lexer) error(offs int, msg string) {
 	if s.err != nil {
 		s.err(s.file.Position(s.file.Pos(offs)), msg)
 	}
 	s.ErrorCount++
 }
 
-func (s *Scanner) errorf(offs int, format string, args ...any) {
+func (s *Lexer) errorf(offs int, format string, args ...any) {
 	s.error(offs, fmt.Sprintf(format, args...))
 }
 
-func (s *Scanner) scanComment() string {
+func (s *Lexer) scanComment() string {
 	// initial '/' already consumed; s.ch == '/' || s.ch == '*'
 	offs := s.offset - 1 // position of initial '/'
 	next := -1           // position immediately following the comment; < 0 means invalid comment
@@ -227,7 +234,7 @@ var prefix = []byte("line ")
 // updateLineInfo parses the incoming comment text at offset offs
 // as a line directive. If successful, it updates the line info table
 // for the position next per the line directive.
-func (s *Scanner) updateLineInfo(next, offs int, text []byte) {
+func (s *Lexer) updateLineInfo(next, offs int, text []byte) {
 	// extract comment text
 	if text[1] == '*' {
 		text = text[:len(text)-2] // lop off trailing "*/"
@@ -296,7 +303,7 @@ func trailingDigits(text []byte) (int, int, bool) {
 	return i + 1, int(n), err == nil
 }
 
-func (s *Scanner) findLineEnd() bool {
+func (s *Lexer) findLineEnd() bool {
 	// initial '/' already consumed
 
 	defer func(offs int) {
@@ -353,7 +360,7 @@ func isDigit(ch rune) bool {
 //
 // Be careful when making changes to this function: it is optimized and affects
 // scanning performance significantly.
-func (s *Scanner) scanIdentifier() string {
+func (s *Lexer) scanIdentifier() string {
 	offs := s.offset
 
 	// Optimize for the common case of an ASCII identifier.
@@ -418,7 +425,7 @@ func isHex(ch rune) bool     { return '0' <= ch && ch <= '9' || 'a' <= lower(ch)
 // in *invalid, if *invalid < 0.
 // digits returns a bitset describing whether the sequence contained
 // digits (bit 0 is set), or separators '_' (bit 1 is set).
-func (s *Scanner) digits(base int, invalid *int) (digsep int) {
+func (s *Lexer) digits(base int, invalid *int) (digsep int) {
 	if base <= 10 {
 		max := rune('0' + base)
 		for isDecimal(s.ch) || s.ch == '_' {
@@ -444,7 +451,8 @@ func (s *Scanner) digits(base int, invalid *int) (digsep int) {
 	return
 }
 
-func (s *Scanner) scanNumber() (token.Token, string) {
+// 读取所有数值字面量,包括整数,浮点数
+func (s *Lexer) scanNumber() (token.Token, string) {
 	offs := s.offset
 	tok := token.ILLEGAL
 
@@ -512,11 +520,12 @@ func (s *Scanner) scanNumber() (token.Token, string) {
 		s.error(s.offset, "hexadecimal mantissa requires a 'p' exponent")
 	}
 
-	// suffix 'i'
-	if s.ch == 'i' {
-		tok = token.IMAG
-		s.next()
-	}
+	// 放弃虚数
+	// // suffix 'i'
+	// if s.ch == 'i' {
+	// 	tok = token.IMAG
+	// 	s.next()
+	// }
 
 	lit := string(s.src[offs:s.offset])
 	if tok == token.INT && invalid >= 0 {
@@ -587,7 +596,7 @@ func invalidSep(x string) int {
 // escaped quote. In case of a syntax error, it stops at the offending
 // character (without consuming it) and returns false. Otherwise
 // it returns true.
-func (s *Scanner) scanEscape(quote rune) bool {
+func (s *Lexer) scanEscape(quote rune) bool {
 	offs := s.offset
 
 	var n int
@@ -640,7 +649,7 @@ func (s *Scanner) scanEscape(quote rune) bool {
 	return true
 }
 
-func (s *Scanner) scanRune() string {
+func (s *Lexer) scanRune() string {
 	// '\'' opening already consumed
 	offs := s.offset - 1
 
@@ -676,7 +685,7 @@ func (s *Scanner) scanRune() string {
 	return string(s.src[offs:s.offset])
 }
 
-func (s *Scanner) scanString() string {
+func (s *Lexer) scanString() string {
 	// '"' opening already consumed
 	offs := s.offset - 1
 
@@ -692,6 +701,28 @@ func (s *Scanner) scanString() string {
 		}
 		if ch == '\\' {
 			s.scanEscape('"')
+		}
+	}
+
+	return string(s.src[offs:s.offset])
+}
+
+func (s *Lexer) scanSingleQuoteString() string {
+	// ''' opening already consumed
+	offs := s.offset - 1
+
+	for {
+		ch := s.ch
+		if ch == '\n' || ch < 0 {
+			s.error(offs, "string literal not terminated")
+			break
+		}
+		s.next()
+		if ch == '\'' {
+			break
+		}
+		if ch == '\\' {
+			s.scanEscape('\'')
 		}
 	}
 
@@ -715,7 +746,7 @@ func stripCR(b []byte, comment bool) []byte {
 	return c[:i]
 }
 
-func (s *Scanner) scanRawString() string {
+func (s *Lexer) scanRawString() string {
 	// '`' opening already consumed
 	offs := s.offset - 1
 
@@ -743,7 +774,7 @@ func (s *Scanner) scanRawString() string {
 	return string(lit)
 }
 
-func (s *Scanner) skipWhitespace() {
+func (s *Lexer) skipWhitespace() {
 	for s.ch == ' ' || s.ch == '\t' || s.ch == '\n' && !s.insertSemi || s.ch == '\r' {
 		s.next()
 	}
@@ -755,7 +786,7 @@ func (s *Scanner) skipWhitespace() {
 // respectively. Otherwise, the result is tok0 if there was no other
 // matching character, or tok2 if the matching character was ch2.
 
-func (s *Scanner) switch2(tok0, tok1 token.Token) token.Token {
+func (s *Lexer) switch2(tok0, tok1 token.Token) token.Token {
 	if s.ch == '=' {
 		s.next()
 		return tok1
@@ -763,7 +794,7 @@ func (s *Scanner) switch2(tok0, tok1 token.Token) token.Token {
 	return tok0
 }
 
-func (s *Scanner) switch3(tok0, tok1 token.Token, ch2 rune, tok2 token.Token) token.Token {
+func (s *Lexer) switch3(tok0, tok1 token.Token, ch2 rune, tok2 token.Token) token.Token {
 	if s.ch == '=' {
 		s.next()
 		return tok1
@@ -775,7 +806,7 @@ func (s *Scanner) switch3(tok0, tok1 token.Token, ch2 rune, tok2 token.Token) to
 	return tok0
 }
 
-func (s *Scanner) switch4(tok0, tok1 token.Token, ch2 rune, tok2, tok3 token.Token) token.Token {
+func (s *Lexer) switch4(tok0, tok1 token.Token, ch2 rune, tok2, tok3 token.Token) token.Token {
 	if s.ch == '=' {
 		s.next()
 		return tok1
@@ -791,24 +822,33 @@ func (s *Scanner) switch4(tok0, tok1 token.Token, ch2 rune, tok2, tok3 token.Tok
 	return tok0
 }
 
+// Scan方法扫描下一个token并返回token的位置,token和其字面量,源文件结束用token.EOF表示
 // Scan scans the next token and returns the token position, the token,
 // and its literal string if applicable. The source end is indicated by
 // token.EOF.
 //
+// 如果返回的token是一个字面量(token.IDENT, token.INT, token.FLOAT, token.STRING)或token.COMMENT
+// 返回值lit会保留相应的字面量字符串
 // If the returned token is a literal (token.IDENT, token.INT, token.FLOAT,
 // token.IMAG, token.CHAR, token.STRING) or token.COMMENT, the literal string
 // has the corresponding value.
 //
+// 如果返回的token是一个关键字,lit表示关键字的字符串
 // If the returned token is a keyword, the literal string is the keyword.
 //
+// 如果返回的token是分号token.SEMICOLON
+// 那当源文件中真的写了分号是lit返回分号
+// 否则如果是一个换行或是文件结尾时,返回的是回车符号
 // If the returned token is token.SEMICOLON, the corresponding
 // literal string is ";" if the semicolon was present in the source,
 // and "\n" if the semicolon was inserted because of a newline or
 // at EOF.
 //
+// 如果返回的是token.ILLEGAL,那lit返回的是不符合规定的字符
 // If the returned token is token.ILLEGAL, the literal string is the
 // offending character.
 //
+// 在其他情况下,返回lit空串
 // In all other cases, Scan returns an empty literal string.
 //
 // For more tolerant parsing, Scan will return a valid token if
@@ -821,7 +861,7 @@ func (s *Scanner) switch4(tok0, tok1 token.Token, ch2 rune, tok2, tok3 token.Tok
 // Scan adds line information to the file added to the file
 // set with Init. Token positions are relative to that file
 // and thus relative to the file set.
-func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
+func (s *Lexer) Scan() (pos token.Pos, tok token.Token, lit string) {
 scanAgain:
 	s.skipWhitespace()
 
@@ -867,8 +907,11 @@ scanAgain:
 			tok = token.STRING
 			lit = s.scanString()
 		case '\'':
+			// insertSemi = true
+			// tok = token.CHAR
+			// lit = s.scanRune()
 			insertSemi = true
-			tok = token.CHAR
+			tok = token.STRING
 			lit = s.scanRune()
 		case '`':
 			insertSemi = true
@@ -943,29 +986,30 @@ scanAgain:
 		case '^':
 			tok = s.switch2(token.XOR, token.XOR_ASSIGN)
 		case '<':
-			if s.ch == '-' {
-				s.next()
-				tok = token.ARROW
-			} else {
-				tok = s.switch4(token.LSS, token.LEQ, '<', token.SHL, token.SHL_ASSIGN)
-			}
+			// if s.ch == '-' {
+			// 	s.next()
+			// 	tok = token.ARROW
+			// } else {
+			tok = s.switch4(token.LSS, token.LEQ, '<', token.SHL, token.SHL_ASSIGN)
+			// }
 		case '>':
 			tok = s.switch4(token.GTR, token.GEQ, '>', token.SHR, token.SHR_ASSIGN)
 		case '=':
 			tok = s.switch2(token.ASSIGN, token.EQL)
 		case '!':
-			tok = s.switch2(token.NOT, token.NEQ)
+			tok = s.switch2(token.LNOT, token.NEQ)
 		case '&':
-			if s.ch == '^' {
-				s.next()
-				tok = s.switch2(token.AND_NOT, token.AND_NOT_ASSIGN)
-			} else {
-				tok = s.switch3(token.AND, token.AND_ASSIGN, '&', token.LAND)
-			}
+			// if s.ch == '^' {
+			// 	s.next()
+			// 	tok = s.switch2(token.AND_NOT, token.AND_NOT_ASSIGN)
+			// } else {
+			tok = s.switch3(token.AND, token.AND_ASSIGN, '&', token.LAND)
+			// }
 		case '|':
 			tok = s.switch3(token.OR, token.OR_ASSIGN, '|', token.LOR)
 		case '~':
-			tok = token.TILDE
+			// tok = token.TILDE
+			tok = token.NOT
 		default:
 			// next reports unexpected BOMs - don't repeat
 			if ch != bom {

@@ -69,22 +69,27 @@ var tokens = []elt{
 	{token.FLOAT, "1e+100", literal},
 	{token.FLOAT, "1e-100", literal},
 	{token.FLOAT, "2.71828e-1000", literal},
-	{token.IMAG, "0i", literal},
-	{token.IMAG, "1i", literal},
-	{token.IMAG, "012345678901234567889i", literal},
-	{token.IMAG, "123456789012345678890i", literal},
-	{token.IMAG, "0.i", literal},
-	{token.IMAG, ".0i", literal},
-	{token.IMAG, "3.14159265i", literal},
-	{token.IMAG, "1e0i", literal},
-	{token.IMAG, "1e+100i", literal},
-	{token.IMAG, "1e-100i", literal},
-	{token.IMAG, "2.71828e-1000i", literal},
-	{token.CHAR, "'a'", literal},
-	{token.CHAR, "'\\000'", literal},
-	{token.CHAR, "'\\xFF'", literal},
-	{token.CHAR, "'\\uff16'", literal},
-	{token.CHAR, "'\\U0000ff16'", literal},
+	// {token.IMAG, "0i", literal},
+	// {token.IMAG, "1i", literal},
+	// {token.IMAG, "012345678901234567889i", literal},
+	// {token.IMAG, "123456789012345678890i", literal},
+	// {token.IMAG, "0.i", literal},
+	// {token.IMAG, ".0i", literal},
+	// {token.IMAG, "3.14159265i", literal},
+	// {token.IMAG, "1e0i", literal},
+	// {token.IMAG, "1e+100i", literal},
+	// {token.IMAG, "1e-100i", literal},
+	// {token.IMAG, "2.71828e-1000i", literal},
+	// {token.CHAR, "'a'", literal},
+	// {token.CHAR, "'\\000'", literal},
+	// {token.CHAR, "'\\xFF'", literal},
+	// {token.CHAR, "'\\uff16'", literal},
+	// {token.CHAR, "'\\U0000ff16'", literal},
+	{token.STRING, "'a'", literal},
+	{token.STRING, "'\\000'", literal},
+	{token.STRING, "'\\xFF'", literal},
+	{token.STRING, "'\\uff16'", literal},
+	{token.STRING, "'\\U0000ff16'", literal},
 	{token.STRING, "`foobar`", literal},
 	{token.STRING, "`" + `foo
 	                        bar` +
@@ -106,7 +111,8 @@ var tokens = []elt{
 	{token.XOR, "^", operator},
 	{token.SHL, "<<", operator},
 	{token.SHR, ">>", operator},
-	{token.AND_NOT, "&^", operator},
+	// {token.AND_NOT, "&^", operator},
+	{token.NOT, "~", operator},
 
 	{token.ADD_ASSIGN, "+=", operator},
 	{token.SUB_ASSIGN, "-=", operator},
@@ -119,11 +125,11 @@ var tokens = []elt{
 	{token.XOR_ASSIGN, "^=", operator},
 	{token.SHL_ASSIGN, "<<=", operator},
 	{token.SHR_ASSIGN, ">>=", operator},
-	{token.AND_NOT_ASSIGN, "&^=", operator},
+	// {token.AND_NOT_ASSIGN, "&^=", operator},
 
 	{token.LAND, "&&", operator},
 	{token.LOR, "||", operator},
-	{token.ARROW, "<-", operator},
+	// {token.ARROW, "<-", operator},
 	{token.INC, "++", operator},
 	{token.DEC, "--", operator},
 
@@ -131,7 +137,7 @@ var tokens = []elt{
 	{token.LSS, "<", operator},
 	{token.GTR, ">", operator},
 	{token.ASSIGN, "=", operator},
-	{token.NOT, "!", operator},
+	{token.LNOT, "!", operator},
 
 	{token.NEQ, "!=", operator},
 	{token.LEQ, "<=", operator},
@@ -150,12 +156,12 @@ var tokens = []elt{
 	{token.RBRACE, "}", operator},
 	{token.SEMICOLON, ";", operator},
 	{token.COLON, ":", operator},
-	{token.TILDE, "~", operator},
+	// {token.TILDE, "~", operator},
 
 	// Keywords
 	{token.BREAK, "break", keyword},
 	{token.CASE, "case", keyword},
-	{token.CHAN, "chan", keyword},
+	// {token.CHAN, "chan", keyword},
 	{token.CONST, "const", keyword},
 	{token.CONTINUE, "continue", keyword},
 
@@ -166,8 +172,8 @@ var tokens = []elt{
 	{token.FOR, "for", keyword},
 
 	{token.FUNC, "func", keyword},
-	{token.GO, "go", keyword},
-	{token.GOTO, "goto", keyword},
+	// {token.GO, "go", keyword},
+	// {token.GOTO, "goto", keyword},
 	{token.IF, "if", keyword},
 	{token.IMPORT, "import", keyword},
 
@@ -177,7 +183,7 @@ var tokens = []elt{
 	{token.RANGE, "range", keyword},
 	{token.RETURN, "return", keyword},
 
-	{token.SELECT, "select", keyword},
+	// {token.SELECT, "select", keyword},
 	{token.STRUCT, "struct", keyword},
 	{token.SWITCH, "switch", keyword},
 	{token.TYPE, "type", keyword},
@@ -233,7 +239,7 @@ func TestScan(t *testing.T) {
 	}
 
 	// verify scan
-	var s Scanner
+	var s Lexer
 	s.Init(fset.AddFile("", fset.Base(), len(source)), source, eh, ScanComments|dontInsertSemis)
 
 	// set up expected position
@@ -336,7 +342,7 @@ func TestStripCR(t *testing.T) {
 }
 
 func checkSemi(t *testing.T, line string, mode Mode) {
-	var S Scanner
+	var S Lexer
 	file := fset.AddFile("TestSemis", fset.Base(), len(line))
 	S.Init(file, []byte(line), nil, mode)
 	pos, tok, lit := S.Scan()
@@ -439,7 +445,7 @@ var lines = []string{
 
 	"break$\n",
 	"case\n",
-	"chan\n",
+	// "chan\n",
 	"const\n",
 	"continue$\n",
 
@@ -450,8 +456,8 @@ var lines = []string{
 	"for\n",
 
 	"func\n",
-	"go\n",
-	"goto\n",
+	// "go\n",
+	// "goto\n",
 	"if\n",
 	"import\n",
 
@@ -461,7 +467,7 @@ var lines = []string{
 	"range\n",
 	"return$\n",
 
-	"select\n",
+	// "select\n",
 	"struct\n",
 	"switch\n",
 	"type\n",
@@ -576,7 +582,7 @@ func testSegments(t *testing.T, segments []segment, filename string) {
 	}
 
 	// verify scan
-	var S Scanner
+	var S Lexer
 	file := fset.AddFile(filename, fset.Base(), len(src))
 	S.Init(file, []byte(src), func(pos token.Position, msg string) { t.Error(Error{pos, msg}) }, dontInsertSemis)
 	for _, s := range segments {
@@ -614,7 +620,7 @@ func TestInvalidLineDirectives(t *testing.T) {
 	}
 
 	// verify scan
-	var S Scanner
+	var S Lexer
 	var s segment // current segment
 	file := fset.AddFile(filepath.Join("dir", "TestInvalidLineDirectives"), fset.Base(), len(src))
 	S.Init(file, []byte(src), func(pos token.Position, msg string) {
@@ -636,7 +642,7 @@ func TestInvalidLineDirectives(t *testing.T) {
 
 // Verify that initializing the same scanner more than once works correctly.
 func TestInit(t *testing.T) {
-	var s Scanner
+	var s Lexer
 
 	// 1st init
 	src1 := "if true { }"
@@ -653,15 +659,19 @@ func TestInit(t *testing.T) {
 	}
 
 	// 2nd init
-	src2 := "go true { ]"
+	// src2 := "go true { ]"
+	src2 := "interface true { ]"
 	f2 := fset.AddFile("src2", fset.Base(), len(src2))
 	s.Init(f2, []byte(src2), nil, dontInsertSemis)
 	if f2.Size() != len(src2) {
 		t.Errorf("bad file size: got %d, expected %d", f2.Size(), len(src2))
 	}
 	_, tok, _ = s.Scan() // go
-	if tok != token.GO {
-		t.Errorf("bad token: got %s, expected %s", tok, token.GO)
+	// if tok != token.GO {
+	// 	t.Errorf("bad token: got %s, expected %s", tok, token.GO)
+	// }
+	if tok != token.INTERFACE {
+		t.Errorf("bad token: got %s, expected %s", tok, token.INTERFACE)
 	}
 
 	if s.ErrorCount != 0 {
@@ -682,7 +692,7 @@ func TestStdErrorHander(t *testing.T) {
 	var list ErrorList
 	eh := func(pos token.Position, msg string) { list.Add(pos, msg) }
 
-	var s Scanner
+	var s Lexer
 	s.Init(fset.AddFile("File1", fset.Base(), len(src)), []byte(src), eh, dontInsertSemis)
 	for {
 		if _, tok, _ := s.Scan(); tok == token.EOF {
@@ -719,7 +729,7 @@ type errorCollector struct {
 }
 
 func checkError(t *testing.T, src string, tok token.Token, pos int, lit, err string) {
-	var s Scanner
+	var s Lexer
 	var h errorCollector
 	eh := func(pos token.Position, msg string) {
 		h.cnt++
@@ -760,38 +770,70 @@ var errors = []struct {
 	{`#`, token.ILLEGAL, 0, "", "illegal character U+0023 '#'"},
 	{`…`, token.ILLEGAL, 0, "", "illegal character U+2026 '…'"},
 	{"..", token.PERIOD, 0, "", ""}, // two periods, not invalid token (issue #28112)
-	{`' '`, token.CHAR, 0, `' '`, ""},
-	{`''`, token.CHAR, 0, `''`, "illegal rune literal"},
-	{`'12'`, token.CHAR, 0, `'12'`, "illegal rune literal"},
-	{`'123'`, token.CHAR, 0, `'123'`, "illegal rune literal"},
-	{`'\0'`, token.CHAR, 3, `'\0'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\07'`, token.CHAR, 4, `'\07'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\8'`, token.CHAR, 2, `'\8'`, "unknown escape sequence"},
-	{`'\08'`, token.CHAR, 3, `'\08'`, "illegal character U+0038 '8' in escape sequence"},
-	{`'\x'`, token.CHAR, 3, `'\x'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\x0'`, token.CHAR, 4, `'\x0'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\x0g'`, token.CHAR, 4, `'\x0g'`, "illegal character U+0067 'g' in escape sequence"},
-	{`'\u'`, token.CHAR, 3, `'\u'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\u0'`, token.CHAR, 4, `'\u0'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\u00'`, token.CHAR, 5, `'\u00'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\u000'`, token.CHAR, 6, `'\u000'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\u000`, token.CHAR, 6, `'\u000`, "escape sequence not terminated"},
-	{`'\u0000'`, token.CHAR, 0, `'\u0000'`, ""},
-	{`'\U'`, token.CHAR, 3, `'\U'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\U0'`, token.CHAR, 4, `'\U0'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\U00'`, token.CHAR, 5, `'\U00'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\U000'`, token.CHAR, 6, `'\U000'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\U0000'`, token.CHAR, 7, `'\U0000'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\U00000'`, token.CHAR, 8, `'\U00000'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\U000000'`, token.CHAR, 9, `'\U000000'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\U0000000'`, token.CHAR, 10, `'\U0000000'`, "illegal character U+0027 ''' in escape sequence"},
-	{`'\U0000000`, token.CHAR, 10, `'\U0000000`, "escape sequence not terminated"},
-	{`'\U00000000'`, token.CHAR, 0, `'\U00000000'`, ""},
-	{`'\Uffffffff'`, token.CHAR, 2, `'\Uffffffff'`, "escape sequence is invalid Unicode code point"},
-	{`'`, token.CHAR, 0, `'`, "rune literal not terminated"},
-	{`'\`, token.CHAR, 2, `'\`, "escape sequence not terminated"},
-	{"'\n", token.CHAR, 0, "'", "rune literal not terminated"},
-	{"'\n   ", token.CHAR, 0, "'", "rune literal not terminated"},
+	// {`' '`, token.CHAR, 0, `' '`, ""},
+	// {`''`, token.CHAR, 0, `''`, "illegal rune literal"},
+	// {`'12'`, token.CHAR, 0, `'12'`, "illegal rune literal"},
+	// {`'123'`, token.CHAR, 0, `'123'`, "illegal rune literal"},
+	// {`'\0'`, token.CHAR, 3, `'\0'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\07'`, token.CHAR, 4, `'\07'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\8'`, token.CHAR, 2, `'\8'`, "unknown escape sequence"},
+	// {`'\08'`, token.CHAR, 3, `'\08'`, "illegal character U+0038 '8' in escape sequence"},
+	// {`'\x'`, token.CHAR, 3, `'\x'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\x0'`, token.CHAR, 4, `'\x0'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\x0g'`, token.CHAR, 4, `'\x0g'`, "illegal character U+0067 'g' in escape sequence"},
+	// {`'\u'`, token.CHAR, 3, `'\u'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\u0'`, token.CHAR, 4, `'\u0'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\u00'`, token.CHAR, 5, `'\u00'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\u000'`, token.CHAR, 6, `'\u000'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\u000`, token.CHAR, 6, `'\u000`, "escape sequence not terminated"},
+	// {`'\u0000'`, token.CHAR, 0, `'\u0000'`, ""},
+	// {`'\U'`, token.CHAR, 3, `'\U'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\U0'`, token.CHAR, 4, `'\U0'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\U00'`, token.CHAR, 5, `'\U00'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\U000'`, token.CHAR, 6, `'\U000'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\U0000'`, token.CHAR, 7, `'\U0000'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\U00000'`, token.CHAR, 8, `'\U00000'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\U000000'`, token.CHAR, 9, `'\U000000'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\U0000000'`, token.CHAR, 10, `'\U0000000'`, "illegal character U+0027 ''' in escape sequence"},
+	// {`'\U0000000`, token.CHAR, 10, `'\U0000000`, "escape sequence not terminated"},
+	// {`'\U00000000'`, token.CHAR, 0, `'\U00000000'`, ""},
+	// {`'\Uffffffff'`, token.CHAR, 2, `'\Uffffffff'`, "escape sequence is invalid Unicode code point"},
+	// {`'`, token.CHAR, 0, `'`, "rune literal not terminated"},
+	// {`'\`, token.CHAR, 2, `'\`, "escape sequence not terminated"},
+	// {"'\n", token.CHAR, 0, "'", "rune literal not terminated"},
+	// {"'\n   ", token.CHAR, 0, "'", "rune literal not terminated"},
+	{`' '`, token.STRING, 0, `' '`, ""},
+	{`''`, token.STRING, 0, `''`, "illegal rune literal"},
+	{`'12'`, token.STRING, 0, `'12'`, "illegal rune literal"},
+	{`'123'`, token.STRING, 0, `'123'`, "illegal rune literal"},
+	{`'\0'`, token.STRING, 3, `'\0'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\07'`, token.STRING, 4, `'\07'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\8'`, token.STRING, 2, `'\8'`, "unknown escape sequence"},
+	{`'\08'`, token.STRING, 3, `'\08'`, "illegal character U+0038 '8' in escape sequence"},
+	{`'\x'`, token.STRING, 3, `'\x'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\x0'`, token.STRING, 4, `'\x0'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\x0g'`, token.STRING, 4, `'\x0g'`, "illegal character U+0067 'g' in escape sequence"},
+	{`'\u'`, token.STRING, 3, `'\u'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\u0'`, token.STRING, 4, `'\u0'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\u00'`, token.STRING, 5, `'\u00'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\u000'`, token.STRING, 6, `'\u000'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\u000`, token.STRING, 6, `'\u000`, "escape sequence not terminated"},
+	{`'\u0000'`, token.STRING, 0, `'\u0000'`, ""},
+	{`'\U'`, token.STRING, 3, `'\U'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\U0'`, token.STRING, 4, `'\U0'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\U00'`, token.STRING, 5, `'\U00'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\U000'`, token.STRING, 6, `'\U000'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\U0000'`, token.STRING, 7, `'\U0000'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\U00000'`, token.STRING, 8, `'\U00000'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\U000000'`, token.STRING, 9, `'\U000000'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\U0000000'`, token.STRING, 10, `'\U0000000'`, "illegal character U+0027 ''' in escape sequence"},
+	{`'\U0000000`, token.STRING, 10, `'\U0000000`, "escape sequence not terminated"},
+	{`'\U00000000'`, token.STRING, 0, `'\U00000000'`, ""},
+	{`'\Uffffffff'`, token.STRING, 2, `'\Uffffffff'`, "escape sequence is invalid Unicode code point"},
+	{`'`, token.STRING, 0, `'`, "rune literal not terminated"},
+	{`'\`, token.STRING, 2, `'\`, "escape sequence not terminated"},
+	{"'\n", token.STRING, 0, "'", "rune literal not terminated"},
+	{"'\n   ", token.STRING, 0, "'", "rune literal not terminated"},
 	{`""`, token.STRING, 0, `""`, ""},
 	{`"abc`, token.STRING, 0, `"abc`, "string literal not terminated"},
 	{"\"abc\n", token.STRING, 0, `"abc`, "string literal not terminated"},
@@ -812,7 +854,7 @@ var errors = []struct {
 	{"\"abc\x80def\"", token.STRING, 4, "\"abc\x80def\"", "illegal UTF-8 encoding"},
 	{"\ufeff\ufeff", token.ILLEGAL, 3, "\ufeff\ufeff", "illegal byte order mark"},                        // only first BOM is ignored
 	{"//\ufeff", token.COMMENT, 2, "//\ufeff", "illegal byte order mark"},                                // only first BOM is ignored
-	{"'\ufeff" + `'`, token.CHAR, 1, "'\ufeff" + `'`, "illegal byte order mark"},                         // only first BOM is ignored
+	{"'\ufeff" + `'`, token.STRING, 1, "'\ufeff" + `'`, "illegal byte order mark"},                       // only first BOM is ignored
 	{`"` + "abc\ufeffdef" + `"`, token.STRING, 4, `"` + "abc\ufeffdef" + `"`, "illegal byte order mark"}, // only first BOM is ignored
 	{"abc\x00def", token.IDENT, 3, "abc", "illegal character NUL"},
 	{"abc\x00", token.IDENT, 3, "abc", "illegal character NUL"},
@@ -845,7 +887,7 @@ func TestIssue10213(t *testing.T) {
 		// foo
 		}
 	`
-	var s Scanner
+	var s Lexer
 	s.Init(fset.AddFile("", fset.Base(), len(src)), []byte(src), nil, 0)
 	for {
 		pos, tok, lit := s.Scan()
@@ -862,7 +904,7 @@ func TestIssue10213(t *testing.T) {
 func TestIssue28112(t *testing.T) {
 	const src = "... .. 0.. .." // make sure to have stand-alone ".." immediately before EOF to test EOF behavior
 	tokens := []token.Token{token.ELLIPSIS, token.PERIOD, token.PERIOD, token.FLOAT, token.PERIOD, token.PERIOD, token.PERIOD, token.EOF}
-	var s Scanner
+	var s Lexer
 	s.Init(fset.AddFile("", fset.Base(), len(src)), []byte(src), nil, 0)
 	for _, want := range tokens {
 		pos, got, lit := s.Scan()
@@ -880,7 +922,7 @@ func BenchmarkScan(b *testing.B) {
 	b.StopTimer()
 	fset := token.NewFileSet()
 	file := fset.AddFile("", fset.Base(), len(source))
-	var s Scanner
+	var s Lexer
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		s.Init(file, source, nil, ScanComments)
@@ -894,6 +936,7 @@ func BenchmarkScan(b *testing.B) {
 }
 
 func BenchmarkScanFiles(b *testing.B) {
+	// 这个是在go的源码文件里挑测试输入,这里不好使
 	// Scan a few arbitrary large files, and one small one, to provide some
 	// variety in benchmarks.
 	for _, p := range []string{
@@ -912,7 +955,7 @@ func BenchmarkScanFiles(b *testing.B) {
 			fset := token.NewFileSet()
 			file := fset.AddFile(filename, fset.Base(), len(src))
 			b.SetBytes(int64(len(src)))
-			var s Scanner
+			var s Lexer
 			b.StartTimer()
 			for i := 0; i < b.N; i++ {
 				s.Init(file, src, nil, ScanComments)
@@ -947,8 +990,8 @@ func TestNumbers(t *testing.T) {
 		{token.FLOAT, "0b1e10", "0b1e10", "'e' exponent requires decimal mantissa"},
 		{token.FLOAT, "0b1P-1", "0b1P-1", "'P' exponent requires hexadecimal mantissa"},
 
-		{token.IMAG, "0b10i", "0b10i", ""},
-		{token.IMAG, "0b10.0i", "0b10.0i", "invalid radix point in binary literal"},
+		// {token.IMAG, "0b10i", "0b10i", ""},
+		// {token.IMAG, "0b10.0i", "0b10.0i", "invalid radix point in binary literal"},
 
 		// octals
 		{token.INT, "0o0", "0o0", ""},
@@ -966,8 +1009,8 @@ func TestNumbers(t *testing.T) {
 		{token.FLOAT, "0o1E+2", "0o1E+2", "'E' exponent requires decimal mantissa"},
 		{token.FLOAT, "0o1p10", "0o1p10", "'p' exponent requires hexadecimal mantissa"},
 
-		{token.IMAG, "0o10i", "0o10i", ""},
-		{token.IMAG, "0o10e0i", "0o10e0i", "'e' exponent requires decimal mantissa"},
+		// {token.IMAG, "0o10i", "0o10i", ""},
+		// {token.IMAG, "0o10e0i", "0o10e0i", "'e' exponent requires decimal mantissa"},
 
 		// 0-octals
 		{token.INT, "0", "0", ""},
@@ -985,8 +1028,8 @@ func TestNumbers(t *testing.T) {
 
 		{token.INT, "1f", "1 f", ""}, // only accept 0-9
 
-		{token.IMAG, "0i", "0i", ""},
-		{token.IMAG, "0678i", "0678i", ""},
+		// {token.IMAG, "0i", "0i", ""},
+		// {token.IMAG, "0678i", "0678i", ""},
 
 		// decimal floats
 		{token.FLOAT, "0.", "0.", ""},
@@ -1023,12 +1066,12 @@ func TestNumbers(t *testing.T) {
 		{token.FLOAT, "0p0", "0p0", "'p' exponent requires hexadecimal mantissa"},
 		{token.FLOAT, "1.0P-1", "1.0P-1", "'P' exponent requires hexadecimal mantissa"},
 
-		{token.IMAG, "0.i", "0.i", ""},
-		{token.IMAG, ".123i", ".123i", ""},
-		{token.IMAG, "123.123i", "123.123i", ""},
-		{token.IMAG, "123e+0i", "123e+0i", ""},
-		{token.IMAG, "123.E-10i", "123.E-10i", ""},
-		{token.IMAG, ".123E+10i", ".123E+10i", ""},
+		// {token.IMAG, "0.i", "0.i", ""},
+		// {token.IMAG, ".123i", ".123i", ""},
+		// {token.IMAG, "123.123i", "123.123i", ""},
+		// {token.IMAG, "123e+0i", "123e+0i", ""},
+		// {token.IMAG, "123.E-10i", "123.E-10i", ""},
+		// {token.IMAG, ".123E+10i", ".123E+10i", ""},
 
 		// hexadecimals
 		{token.INT, "0x0", "0x0", ""},
@@ -1039,7 +1082,7 @@ func TestNumbers(t *testing.T) {
 		{token.INT, "0x", "0x", "hexadecimal literal has no digits"},
 		{token.INT, "0x1g", "0x1 g", ""},
 
-		{token.IMAG, "0xf00i", "0xf00i", ""},
+		// {token.IMAG, "0xf00i", "0xf00i", ""},
 
 		// hexadecimal floats
 		{token.FLOAT, "0x0p0", "0x0p0", ""},
@@ -1059,7 +1102,7 @@ func TestNumbers(t *testing.T) {
 		{token.FLOAT, "0x1234PAB", "0x1234P AB", "exponent has no digits"},
 		{token.FLOAT, "0x1.2p1a", "0x1.2p1 a", ""},
 
-		{token.IMAG, "0xf00.bap+12i", "0xf00.bap+12i", ""},
+		// {token.IMAG, "0xf00.bap+12i", "0xf00.bap+12i", ""},
 
 		// separators
 		{token.INT, "0b_1000_0001", "0b_1000_0001", ""},
@@ -1067,7 +1110,7 @@ func TestNumbers(t *testing.T) {
 		{token.INT, "0_466", "0_466", ""},
 		{token.INT, "1_000", "1_000", ""},
 		{token.FLOAT, "1_000.000_1", "1_000.000_1", ""},
-		{token.IMAG, "10e+1_2_3i", "10e+1_2_3i", ""},
+		// {token.IMAG, "10e+1_2_3i", "10e+1_2_3i", ""},
 		{token.INT, "0x_f00d", "0x_f00d", ""},
 		{token.FLOAT, "0x_f00d.0p1_2", "0x_f00d.0p1_2", ""},
 
@@ -1077,11 +1120,11 @@ func TestNumbers(t *testing.T) {
 		{token.FLOAT, "1_.", "1_.", "'_' must separate successive digits"},
 		{token.FLOAT, "0._1", "0._1", "'_' must separate successive digits"},
 		{token.FLOAT, "2.7_e0", "2.7_e0", "'_' must separate successive digits"},
-		{token.IMAG, "10e+12_i", "10e+12_i", "'_' must separate successive digits"},
+		// {token.IMAG, "10e+12_i", "10e+12_i", "'_' must separate successive digits"},
 		{token.INT, "0x___0", "0x___0", "'_' must separate successive digits"},
 		{token.FLOAT, "0x1.0_p0", "0x1.0_p0", "'_' must separate successive digits"},
 	} {
-		var s Scanner
+		var s Lexer
 		var err string
 		s.Init(fset.AddFile("", fset.Base(), len(test.src)), []byte(test.src), func(_ token.Position, msg string) {
 			if err == "" {
