@@ -16,7 +16,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/abietic/shabby-lexer/token"
+	"github.com/abietic/shabbylexer/token"
 )
 
 // 为Lexer.init初始化时添加一个错误处理函数

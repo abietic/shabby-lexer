@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/abietic/shabby-lexer/token"
+	"github.com/abietic/shabbylexer/token"
 )
 
 var fset = token.NewFileSet()

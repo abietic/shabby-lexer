@@ -7,8 +7,8 @@ package shabbylexer_test
 import (
 	"fmt"
 
-	shabbylexer "github.com/abietic/shabby-lexer"
-	"github.com/abietic/shabby-lexer/token"
+	"github.com/abietic/shabbylexer"
+	"github.com/abietic/shabbylexer/token"
 )
 
 func ExampleScanner_Scan() {

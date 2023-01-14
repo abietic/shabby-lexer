@@ -9,7 +9,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/abietic/shabby-lexer/token"
+	"github.com/abietic/shabbylexer/token"
 )
 
 // In an ErrorList, an error is represented by an *Error.

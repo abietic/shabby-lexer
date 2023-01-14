@@ -1,3 +1,3 @@
-module github.com/abietic/shabby-lexer
+module github.com/abietic/shabbylexer
 
 go 1.19
