@@ -912,7 +912,7 @@ scanAgain:
 			// lit = s.scanRune()
 			insertSemi = true
 			tok = token.STRING
-			lit = s.scanRune()
+			lit = s.scanSingleQuoteString()
 		case '`':
 			insertSemi = true
 			tok = token.STRING
